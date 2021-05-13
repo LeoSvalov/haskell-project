@@ -265,6 +265,3 @@ knn players features target metric k = nearestPlayers
     distances = take k $ sortBy (compare `on` snd) $ caclulateDistance players target features metric
     nearestPlayers = map(\(i, d) -> (getPlayerById i players,d)) distances
 
-
--- applyKMeans :: _
--- applyKMeans dataset target k features 
