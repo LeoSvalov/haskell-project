@@ -1,3 +1,3 @@
-# Changelog for my-project
+# Changelog for nearestPlayers
 
 ## Unreleased changes
