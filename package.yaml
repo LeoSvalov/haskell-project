@@ -28,6 +28,7 @@ dependencies:
 - utf8-string
 - pretty-simple
 - kmeans
+- gloss
 
 library:
   source-dirs: src

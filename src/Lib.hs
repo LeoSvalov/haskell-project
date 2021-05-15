@@ -5,9 +5,9 @@ import Control.Exception (IOException)
 import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 
--- bytestring
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as ByteString
+
 import Data.Csv
   ( DefaultOrdered(headerOrder)
   , FromField(parseField)
@@ -20,27 +20,25 @@ import Data.Csv
   )
 import qualified Data.Csv as Cassava
 
--- text
 import Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 
--- vector
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 
 import Data.Function (on)
 import Data.List (sortBy, intercalate)
+
 import Text.Pretty.Simple (pPrint)
 import Data.KMeans as KMeans
------
-run :: IO ()
-run = putStrLn "someFunc"
------
+
+import Graphics.Gloss as Gloss
+
+
 data Player = Player
         {
-            player_id             :: !Int
-        ,   name                  :: !String
-        ,   -- сделай
+            player_id             :: !Int,
+            name                  :: !String,
             nationality           :: !String,
             club                  :: !String,
             rating                :: !Int,
@@ -146,10 +144,10 @@ path = "/Users/levsvalov/code_workspace/Spring2021/haskell/project/nearestPlayer
 getByteString :: FilePath -> IO ByteString
 getByteString = ByteString.readFile
 
-decode :: IO (Either String (Header, Vector Player))
+decode :: IO (Either String (Header, Vector.Vector Player))
 decode = (fmap Cassava.decodeByName . getByteString) path
 
-readDataset :: Either String (Header, Vector Player) -> Vector Player
+readDataset :: Either String (Header, Vector.Vector Player) -> Vector.Vector Player
 readDataset d = case d of
     Left err -> Vector.empty
     Right (_,v) -> v
@@ -160,6 +158,15 @@ features = [skill_moves, weak_foot, ball_control, dribbling, marking, sliding_ta
             stamina, strength, balance, agility, jumping, heading, shot_power,
             finishing, long_shots, curve, freekick_accuracy, volleys,
             gk_positioning, gk_diving, gk_kicking, gk_handling, gk_reflexes]
+
+run :: IO ()
+run = do
+  putStrLn "Enter action: 1 - for KNN, otherwise - KMeans"
+  input <- getLine
+  let i = (read input :: Int)
+  if i ==  1 then doKNN
+  else doKMeans
+
 
 doKNN :: IO ()
 doKNN = do
@@ -174,11 +181,12 @@ doKNN = do
   pPrint $ intercalate ", " $ getValuesByAttributes [name, nationality, preffered_position, club] targetPlayer
   -- pPrint targetPlayer
 
-  let k = 3 -- top k results
+  let k = 4 -- top k results
   let metric = cosine -- euclidian 
   print ("------------  Suggested" ++ show k ++  "players ------------" )
   let result = knn dataset features targetPlayer metric k
   prettyKNN result
+  drawChain $ (targetPlayer,0.0) : result
 
 doKMeans :: IO ()
 doKMeans = do
@@ -186,9 +194,9 @@ doKMeans = do
   putStrLn "Enter size of sample for clustering:"
   input <- getLine
   let n = (read input :: Int)
-  let sample = getNrandomPlayers ds n
+  let sample = getNPlayers ds n
   print "Sample:"
-  
+
   pPrint $ map (intercalate ", " . getValuesByAttributes [name,preffered_position]) sample
   let getValues player = fromIntegral <$> getValuesByAttributes features player
   let k = 3 -- number of clusters
@@ -196,10 +204,34 @@ doKMeans = do
   let result = kmeansGen getValues k sample
   prettyKMeans $ zip [0..] result
 
+
+
+drawChain :: [(Player, Double)] -> IO()
+drawChain ps = display window background $ drawPlayers (-400) ps
+    where
+      window = InWindow "Similiar players" (1200, 2200) (0, 0)
+      background = white
+
+      drawPlayers :: Int -> [(Player, Double)] -> Picture
+      drawPlayers _ [] = blank
+      drawPlayers shift [(p,dist)] =
+        translate (fromIntegral shift) 0 (drawPlayer p)
+      drawPlayers shift ((p, d): (p2, dist):pls) =
+        translate (fromIntegral shift) 0 (drawPlayer p)
+        <> line [(fromIntegral (shift+75),0), (fromIntegral(shift+200),0)]
+        <> translate (fromIntegral (shift+85)) 2 (Scale 0.1 0.1 (text (take 5 $ show dist)))
+        <> drawPlayers (shift + 200) ((p2,dist):pls)
+
+      drawPlayer p = color (dark green) (circleSolid 75)
+       <> translate (-40) 0 (Scale 0.1 0.1 (text(getValueByAttribute name p)))
+       <> translate (-40) (-25) (Scale 0.1 0.1 (text(getValueByAttribute preffered_position p)))
+
+
+
 prettyKNN :: [(Player, Double)] -> IO ()
 prettyKNN = mapM_ printPlayer
   where
-    printPlayer (player, dist) = 
+    printPlayer (player, dist) =
       print ("Distance: " ++ show dist) <>
       pPrint (intercalate ", " $ getValuesByAttributes [name,preffered_position] player)
 
@@ -210,10 +242,10 @@ prettyKMeans = mapM_ printCluster
       print ("cluster "  ++ show (i+1)) <>
       pPrint (map (intercalate ", " . getValuesByAttributes [name,preffered_position]) players)
 
-getNrandomPlayers :: Vector Player -> Int -> [Player]
-getNrandomPlayers ds n = Vector.toList $  Vector.take n ds -- for now n first, but later arbitary n
+getNPlayers :: Vector.Vector Player -> Int -> [Player]
+getNPlayers ds n = Vector.toList $  Vector.take n ds 
 
-getPlayerById :: Int -> Vector Player -> Player
+getPlayerById :: Int -> Vector.Vector Player -> Player
 getPlayerById player_id players = players Vector.! player_id
 
 getValueByAttribute :: (Player -> v) -> Player -> v -- must be the same type!!
@@ -246,7 +278,7 @@ distance player target features metric= (getValueByAttribute player_id player, m
 
 
 caclulateDistance
-  :: Vector Player
+  :: Vector.Vector Player
   -> Player
   -> [Player -> Int]
   -> ([(Int, Int)] -> Double) -- the method of calculating distance
@@ -254,7 +286,7 @@ caclulateDistance
 caclulateDistance players target features metric = Vector.toList $ Vector.map(\player -> distance player target features metric) players
 
 
-knn :: Vector Player        -- dataset
+knn :: Vector.Vector Player        -- dataset
     -> [Player -> Int]      -- list of features 
     -> Player               -- the player to which we search nearests
     -> ([(Int, Int)] -> Double) -- the method of calculating distance
@@ -266,5 +298,3 @@ knn players features target metric k = nearestPlayers
     nearestPlayers = map(\(i, d) -> (getPlayerById i players,d)) distances
 
 
--- applyKMeans :: _
--- applyKMeans dataset target k features 

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c1e6ee3c8f1c6eadf13005e08cbeaad077f4fb9042ccf45df5727f95bf077024
+-- hash: 192f480afd6ce0d39631d0565ddf3965630eaf38aa7a4c2196d11a20e73636f0
 
 name:           nearestPlayers
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
       base >=4.7 && <5
     , bytestring
     , cassava
+    , gloss
     , kmeans
     , pretty-simple
     , text
@@ -54,6 +55,7 @@ executable nearestPlayers-exe
       base >=4.7 && <5
     , bytestring
     , cassava
+    , gloss
     , kmeans
     , nearestPlayers
     , pretty-simple
@@ -74,6 +76,7 @@ test-suite nearestPlayers-test
       base >=4.7 && <5
     , bytestring
     , cassava
+    , gloss
     , kmeans
     , nearestPlayers
     , pretty-simple

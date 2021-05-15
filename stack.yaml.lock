@@ -3,7 +3,18 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    name: rp-tree
+    version: 0.2.0.0
+    git: https://github.com/ocramz/rp-tree.git
+    pantry-tree:
+      size: 1181
+      sha256: 7fe6899b01910050395171d7643872a7ae9d477930b79eed3a20ea6966a58baa
+    commit: 759ded09f8803ad890532f8809758c9900c72f07
+  original:
+    git: https://github.com/ocramz/rp-tree.git
+    commit: 759ded09f8803ad890532f8809758c9900c72f07
 snapshots:
 - completed:
     size: 567672
